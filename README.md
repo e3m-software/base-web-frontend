@@ -1,8 +1,4 @@
-# BASE WEB FRONTEND
-
-## Commands
-
-TSDX scaffolds your new library inside `/src`.
+## BASE WEB FRONTEND
 
 To install, use:
 
