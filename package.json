@@ -35,7 +35,7 @@
     "trailingComma": "es5"
   },
   "name": "@e3m-software/base-web-frontend",
-  "author": "firmanram",
+  "author": "firmanramdhani",
   "module": "dist/base-web-frontend.esm.js",
   "size-limit": [
     {
