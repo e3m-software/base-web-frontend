@@ -11,7 +11,7 @@ import {
   BaseURLEntity,
   BaseMethodEntity,
 } from '../..//domain/entities';
-import { defaultMethod } from '../../domain/constant';
+import { defaultMethod, makeDefaultURL } from '../../domain/constant';
 
 const HeaderPost = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +32,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
 
   constructor(params: BaseDataSourceConstructorEntity) {
     this.baseUrl = params.baseUrl ?? process.env.REACT_APP_BASE_URL;
-    this.URLs = params.urls;
+    this.URLs = params.urls ?? makeDefaultURL(params.apiUrl ?? '');
     this.methods = params.methods ?? defaultMethod;
     this.useAuthSchema = params.useAuthSchema;
     this.authURL = params.authURL;
