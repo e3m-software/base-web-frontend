@@ -91,8 +91,8 @@ export interface BaseMethodEntity {
 }
 
 export interface BaseDataSourceConstructorEntity {
-  urls: BaseURLEntity;
-  methods: BaseMethodEntity;
+  urls?: BaseURLEntity;
+  methods?: BaseMethodEntity;
   baseUrl?: string;
   apiUrl?: string;
   authURL?: string;
