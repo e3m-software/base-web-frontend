@@ -1,37 +1,34 @@
-import { AxiosRequestConfig } from 'axios';
+import { AxiosRequestConfig, Method } from 'axios';
 import { BaseParamsEntity } from './base-params.entity';
+import { BaseEntity } from './base.entity';
 
-interface ManagerFailedParamsEntity {
-  message: Error | string | string[];
-  statusCode: number;
+export interface ResponseErrorEntity {
+  message?: Error | string | string[];
+  status: number;
 }
 
-interface ManagerSuccessParamsEntity<Entity> {
-  response: Entity | Entity[];
+export interface ResponseSuccessEntity {
+  data?: any;
+  status: number;
 }
 
-export interface BaseManagerParamsEntity<Entity> {
-  params?: BaseParamsEntity;
-  onSuccess?(params: ManagerSuccessParamsEntity<Entity>): void;
-  onFailed?(params: ManagerFailedParamsEntity): void;
+export interface VariableURLEntity {
+  [key: string]: string;
+}
+
+export interface BaseManagerParamsEntity<Entity extends BaseEntity = any> {
   token?: string;
+  payload?: Entity;
+  params?: BaseParamsEntity;
+  variableURL?: VariableURLEntity;
   paramRequest?: AxiosRequestConfig;
+  onFailed?(params: ResponseErrorEntity): void;
+  onSuccess?(params: ResponseSuccessEntity): void;
 }
 
-export interface BaseBatchMessage {
-  id: string;
-  message: string;
-  [key: string]: any;
-}
-export interface BaseResponseBatchDataEntity {
-  failed: BaseBatchMessage[];
-  success: BaseBatchMessage[];
-}
+export type BaseResponseEntity = ResponseSuccessEntity | ResponseErrorEntity;
 
-export interface BaseDataSourceConstructorEntity {
-  baseUrl?: string;
-  apiUrl: string;
-
+export interface BaseURLEntity {
   getIndexUrl?: string;
   getDataUrl?: string;
   createUrl?: string;
@@ -60,4 +57,44 @@ export interface BaseDataSourceConstructorEntity {
 
   rollbackProcessTransactionUrl?: string;
   batchRollbackProcessTransactionUrl?: string;
+}
+
+export interface BaseMethodEntity {
+  getIndexMethod?: Method;
+  getDataMethod?: Method;
+  createMethod?: Method;
+  updateMethod?: Method;
+
+  deleteMethod?: Method;
+  batchDeleteMethod?: Method;
+
+  confirmProcessDataMethod?: Method;
+  batchConfirmProcessDataMethod?: Method;
+
+  cancelProcessDataMethod?: Method;
+  batchCancelProcessDataMethod?: Method;
+
+  activateMethod?: Method;
+  batchActivateMethod?: Method;
+
+  deactivateMethod?: Method;
+  batchDeactivateMethod?: Method;
+
+  confirmProcessTransactionMethod?: Method;
+  batchConfirmProcessTransactionMethod?: Method;
+
+  cancelProcessTransactionMethod?: Method;
+  batchCancelProcessTransactionMethod?: Method;
+
+  rollbackProcessTransactionMethod?: Method;
+  batchRollbackProcessTransactionMethod?: Method;
+}
+
+export interface BaseDataSourceConstructorEntity {
+  urls: BaseURLEntity;
+  methods: BaseMethodEntity;
+  baseUrl?: string;
+  apiUrl?: string;
+  authURL?: string;
+  useAuthSchema?: boolean;
 }

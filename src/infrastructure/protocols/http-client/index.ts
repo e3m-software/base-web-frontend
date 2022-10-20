@@ -1,7 +1,7 @@
-import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { authHelper } from '../../helpers';
 import { ErrorRequest } from '../error-handlings';
-import { HttpClientRepository } from '../repositories';
+import { HttpRequestProps, HttpClientRepository } from '../repositories';
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 export class HttpClient<R> implements HttpClientRepository<R> {
   setRequestToken = (
@@ -14,31 +14,38 @@ export class HttpClient<R> implements HttpClientRepository<R> {
     return request;
   };
 
-  async request(params: AxiosRequestConfig, token: string): Promise<R> {
+  async request(props: HttpRequestProps): Promise<R> {
+    const {
+      useAuthSchema = true,
+      authURL = '/auth/login',
+      params,
+      token,
+    } = props;
+
     axios.interceptors.request.use(request =>
       this.setRequestToken(request, token)
     );
+
     try {
-      const { data } = await axios.request<R>({ ...params });
-      return data;
+      const response: AxiosResponse = await axios.request<R>({ ...params });
+      const data = response.data;
+      const status = response.status;
+      return { data, status } as any;
     } catch (e) {
       const error = e as AxiosError<any>;
-      const { message, statusCode, data } = error?.response?.data ?? {
-        message: 'Unexpected Error',
-      };
-      const skipAuth = process.env.REACT_APP_SKIP_AUTH ?? 'NO';
-      const loginUrl = process.env.REACT_APP_LOGIN_URL ?? '/auth/login';
-      const statusResponse = statusCode ?? error.response?.status;
+      const errorResponse: AxiosResponse = error?.response;
+      const errorData = errorResponse?.data;
+      const status = errorResponse?.status;
+      const message = errorData?.message ?? errorData;
 
-      if (statusResponse === 401 && skipAuth === 'NO') {
+      if (status === 401 && useAuthSchema) {
         await authHelper.clearStorageLogout();
         const urlBeforeLogin = window.location.href;
         await localStorage.setItem('url_before_login', urlBeforeLogin);
-        window.location.replace(loginUrl);
+        window.location.replace(authURL);
       }
-      throw new ErrorRequest(data, message, statusCode);
+
+      throw new ErrorRequest(errorData, message, status);
     }
   }
 }
-
-export const requestHttpClient = new HttpClient().request;

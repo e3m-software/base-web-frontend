@@ -1,124 +1,51 @@
 import {
   HttpClient,
-  ErrorRequest,
   HttpClientRepository,
 } from '../../infrastructure/protocols';
 import { IBaseDataSourceRepository } from '../../domain/repositories';
 import {
   BaseEntity,
-  BaseParamsEntity,
-  BaseResponseEntity,
-  BaseResponseIndexEntity,
   BaseManagerParamsEntity,
-  BaseResponseBatchDataEntity,
   BaseDataSourceConstructorEntity,
+  BaseResponseEntity,
+  BaseURLEntity,
+  BaseMethodEntity,
 } from '../..//domain/entities';
+import { defaultMethod } from '../../domain/constant';
 
+const HeaderPost = {
+  'Access-Control-Allow-Origin': '*',
+  'Content-Type': 'application/json',
+  Accept: '*/*',
+};
 export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   implements IBaseDataSourceRepository<E> {
   protected baseUrl: string;
-  protected apiUrl: string;
-  protected getIndexUrl: string;
-  protected getDataUrl: string;
-  protected createUrl: string;
-  protected updateUrl: string;
-
-  protected deleteUrl: string;
-  protected batchDeleteUrl: string;
-
-  protected confirmProcessDataUrl: string;
-  protected batchConfirmProcessDataUrl: string;
-
-  protected cancelProcessDataUrl: string;
-  protected batchCancelProcessDataUrl: string;
-
-  protected activateUrl: string;
-  protected batchActivateUrl: string;
-
-  protected deactivateUrl: string;
-  protected batchDeactivateUrl: string;
-
-  protected confirmProcessTransactionUrl?: string;
-  protected batchConfirmProcessTransactionUrl?: string;
-
-  protected cancelProcessTransactionUrl?: string;
-  protected batchCancelProcessTransactionUrl?: string;
-
-  protected rollbackProcessTransactionUrl?: string;
-  protected batchRollbackProcessTransactionUrl?: string;
+  protected URLs: BaseURLEntity;
+  protected methods: BaseMethodEntity;
+  protected useAuthSchema: boolean;
+  protected authURL: string;
 
   protected requestHttpClient: HttpClientRepository<
-    BaseResponseEntity<E>
-  > = new HttpClient<BaseResponseEntity<E>>();
+    BaseResponseEntity
+  > = new HttpClient<BaseResponseEntity>();
 
   constructor(params: BaseDataSourceConstructorEntity) {
     this.baseUrl = params.baseUrl ?? process.env.REACT_APP_BASE_URL;
-    this.apiUrl = params.apiUrl;
-    this.getIndexUrl = params.getIndexUrl ?? params.apiUrl;
-    this.getDataUrl = params.getDataUrl ?? params.apiUrl;
-    this.createUrl = params.createUrl ?? params.apiUrl;
-    this.updateUrl = params.updateUrl ?? params.apiUrl;
-
-    this.deleteUrl = params.deleteUrl ?? params.apiUrl;
-    this.batchDeleteUrl =
-      params.batchDeleteUrl ?? `${params.apiUrl}/batch-delete`;
-
-    this.confirmProcessDataUrl = params.confirmProcessDataUrl ?? params.apiUrl;
-    this.batchConfirmProcessDataUrl =
-      params.batchConfirmProcessDataUrl ??
-      `${params.apiUrl}/batch-confirm-request`;
-
-    this.cancelProcessDataUrl = params.cancelProcessDataUrl ?? params.apiUrl;
-    this.batchCancelProcessDataUrl =
-      params.batchCancelProcessDataUrl ??
-      `${params.apiUrl}/batch-cancel-request`;
-
-    this.activateUrl = params.activateUrl ?? params.apiUrl;
-    this.batchActivateUrl =
-      params.batchActivateUrl ?? `${params.apiUrl}/batch-activate`;
-
-    this.deactivateUrl = params.deactivateUrl ?? params.apiUrl;
-    this.batchDeactivateUrl =
-      params.batchDeactivateUrl ?? `${params.apiUrl}/batch-deactivate`;
-
-    this.confirmProcessTransactionUrl =
-      params.confirmProcessTransactionUrl ?? params.apiUrl;
-    this.batchConfirmProcessTransactionUrl =
-      params.batchConfirmProcessTransactionUrl ??
-      `${params.apiUrl}/batch-confirm-transaction`;
-
-    this.cancelProcessTransactionUrl =
-      params.cancelProcessTransactionUrl ?? params.apiUrl;
-    this.batchCancelProcessTransactionUrl =
-      params.batchCancelProcessTransactionUrl ??
-      `${params.apiUrl}/batch-cancel-transaction`;
-
-    this.rollbackProcessTransactionUrl =
-      params.rollbackProcessTransactionUrl ?? params.apiUrl;
-    this.batchRollbackProcessTransactionUrl =
-      params.batchRollbackProcessTransactionUrl ??
-      `${params.apiUrl}/batch-rollback-transaction`;
+    this.URLs = params.urls;
+    this.methods = params.methods ?? defaultMethod;
+    this.useAuthSchema = params.useAuthSchema;
+    this.authURL = params.authURL;
   }
 
-  protected makeParams(params: BaseParamsEntity): any {
-    return params;
-  }
-
-  protected makeApiUrl(url: string, baseUrl?: string): string {
-    return `${baseUrl ?? this.baseUrl}${url}`;
-  }
-
-  protected handleError(error: any): any {
-    const { message: messages, statusCode } = error;
-    const message: any = messages
-      ? Array.isArray(messages)
-        ? messages
-        : [messages]
-      : ['Unexpected Error'];
-    return {
-      message,
-      statusCode,
-    };
+  protected makeApiUrl(variable = {} as any, url = '' as string): string {
+    return url
+      .split('/')
+      .map((item: string) => {
+        if (item.includes(':')) return variable[item.slice(1)];
+        return item;
+      })
+      .join('/');
   }
 
   protected makeIds(payload: E[]): string[] {
@@ -133,516 +60,505 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
     return payload.id;
   }
 
-  async handleGetIndex(
-    manager: BaseManagerParamsEntity<BaseResponseIndexEntity<E>>
-  ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
+  //custom request
+  async handleCustomRequest(manager: BaseManagerParamsEntity): Promise<void> {
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(this.getIndexUrl),
-          method: 'GET',
-          params: this.makeParams(params),
-        },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<
-        BaseResponseIndexEntity<E>
-      >;
-      onSuccess({ response: data ?? message ?? response });
+      const response: any = await this.requestHttpClient.request({
+        params: manager.paramRequest,
+        token: manager.token,
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
-  async handleGetData(
-    id: string,
-    manager: BaseManagerParamsEntity<E>
-  ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
+  async handleGetIndex(manager: BaseManagerParamsEntity): Promise<void> {
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(`${this.getDataUrl}/${id}`),
-          method: 'GET',
-          params: this.makeParams(params),
+      const response = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(manager.variableURL, this.URLs.getIndexUrl),
+          method: this.methods.getIndexMethod,
+          params: manager.params,
         },
-        token
-      );
-      const { message } = response as BaseResponseEntity<E>;
-      onSuccess({ response: message });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
-  async handleCreate(
-    payload: E,
-    manager: BaseManagerParamsEntity<E>
-  ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
+  async handleGetData(manager: BaseManagerParamsEntity): Promise<void> {
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(this.createUrl),
-          method: 'POST',
-          params: this.makeParams(params),
-          data: payload,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(manager.variableURL, this.URLs.getDataUrl),
+          params: manager.params,
+          method: this.methods.getDataMethod,
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<E>;
-      onSuccess({ response: data ?? message ?? response });
+      });
+
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
-  async handleUpdate(
-    id: string,
-    payload: E,
-    manager: BaseManagerParamsEntity<E>
-  ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
+  async handleCreate(manager: BaseManagerParamsEntity): Promise<void> {
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(`${this.updateUrl}/${id}`),
-          method: 'PUT',
-          params: this.makeParams(params),
-          data: payload,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json',
-            Accept: '*/*',
-          },
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(manager.variableURL, this.URLs.createUrl),
+          params: manager.params,
+          data: manager.payload,
+          headers: HeaderPost,
+          method: this.methods.createMethod,
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<E>;
-      onSuccess({ response: data ?? message ?? response });
+      });
+
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
-  async handleDelete(
-    payload: E,
-    manager: BaseManagerParamsEntity<E>
-  ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
-    const id = this.makeId(payload);
+  async handleUpdate(manager: BaseManagerParamsEntity): Promise<void> {
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(`${this.deleteUrl}/${id}`),
-          method: 'DELETE',
-          params: this.makeParams(params),
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(manager.variableURL, this.URLs.updateUrl),
+          params: manager.params,
+          data: manager.payload,
+          headers: HeaderPost,
+          method: this.methods.updateMethod,
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<E>;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
-  async handleBatchDelete(
-    payload: E[],
-    manager: BaseManagerParamsEntity<BaseResponseBatchDataEntity>
-  ): Promise<void> {
-    const { params = {}, onSuccess, onFailed, token } = manager;
+  async handleDelete(manager: BaseManagerParamsEntity): Promise<void> {
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(this.batchDeleteUrl),
-          method: 'DELETE',
-          params: this.makeParams(params),
-          data: { ids: this.makeIds(payload) },
-        },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<
-        BaseResponseBatchDataEntity
-      >;
-      onSuccess({ response: data ?? message ?? response });
-    } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
-    }
-  }
-
-  async handleConfirmProcessData(
-    payload: E,
-    manager: BaseManagerParamsEntity<E>
-  ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
-    const id = this.makeId(payload);
-    try {
-      const response: any = await this.requestHttpClient.request(
-        {
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
           url: this.makeApiUrl(
-            `${this.confirmProcessDataUrl}/${id}/confirm-request`
+            {
+              id: this.makeId(manager.payload),
+              ...(manager.variableURL ?? {}),
+            },
+            this.URLs.deleteUrl
           ),
-          method: 'PUT',
-          params: this.makeParams(params),
+          params: manager.params,
+          method: this.methods.deleteMethod,
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<E>;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
+    }
+  }
+
+  async handleBatchDelete(manager: BaseManagerParamsEntity): Promise<void> {
+    try {
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(manager.variableURL, this.URLs.batchDeleteUrl),
+          method: this.methods.batchDeleteMethod,
+          params: manager.params,
+          data: { ids: this.makeIds(manager.payload) },
+        },
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
+    } catch (error) {
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
+    }
+  }
+
+  // confirm process data
+  async handleConfirmProcessData(
+    manager: BaseManagerParamsEntity
+  ): Promise<void> {
+    try {
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(
+            {
+              id: this.makeId(manager.payload),
+              ...(manager.variableURL ?? {}),
+            },
+            this.URLs.confirmProcessDataUrl
+          ),
+          method: this.methods.confirmProcessDataMethod,
+          params: manager.params,
+        },
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
+    } catch (error) {
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
   async handleBatchConfirmProcessData(
-    payload: E[],
-    manager: BaseManagerParamsEntity<BaseResponseBatchDataEntity>
+    manager: BaseManagerParamsEntity
   ): Promise<void> {
-    const { params = {}, onSuccess, onFailed, token } = manager;
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(this.batchConfirmProcessDataUrl),
-          method: 'PUT',
-          params: this.makeParams(params),
-          data: { ids: this.makeIds(payload) },
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(
+            manager.variableURL,
+            this.URLs.batchConfirmProcessDataUrl
+          ),
+          method: this.methods.batchConfirmProcessDataMethod,
+          params: manager.params,
+          data: { ids: this.makeIds(manager.payload) },
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<
-        BaseResponseBatchDataEntity
-      >;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
-  async handleCancelProcessData(
-    payload: E,
-    manager: BaseManagerParamsEntity<E>
-  ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
-    const id = this.makeId(payload);
+  //handle activate
+  async handleActivate(manager: BaseManagerParamsEntity): Promise<void> {
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(`${this.cancelProcessDataUrl}/${id}/cancel`),
-          method: 'PUT',
-          params: this.makeParams(params),
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(
+            {
+              id: this.makeId(manager.payload),
+              ...(manager.variableURL ?? {}),
+            },
+            this.URLs.activateUrl
+          ),
+          method: this.methods.activateMethod,
+          params: manager.params,
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<E>;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
+    }
+  }
+
+  async handleBatchActivate(manager: BaseManagerParamsEntity): Promise<void> {
+    try {
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(manager.variableURL, this.URLs.batchActivateUrl),
+          method: this.methods.batchActivateMethod,
+          params: manager.params,
+          data: { ids: this.makeIds(manager.payload) },
+        },
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
+    } catch (error) {
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
+    }
+  }
+
+  //handle deactivate
+  async handleDeactivate(manager: BaseManagerParamsEntity): Promise<void> {
+    try {
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(
+            {
+              id: this.makeId(manager.payload),
+              ...(manager.variableURL ?? {}),
+            },
+            this.URLs.deactivateUrl
+          ),
+          method: this.methods.deactivateMethod,
+          params: manager.params,
+        },
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
+    } catch (error) {
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
+    }
+  }
+
+  async handleBatchDeactivate(manager: BaseManagerParamsEntity): Promise<void> {
+    try {
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(
+            manager.variableURL,
+            this.URLs.batchDeactivateUrl
+          ),
+          method: this.methods.batchDeactivateMethod,
+          params: manager.params,
+          data: { ids: this.makeIds(manager.payload) },
+        },
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
+    } catch (error) {
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
+    }
+  }
+
+  //cancel process data
+  async handleCancelProcessData(
+    manager: BaseManagerParamsEntity
+  ): Promise<void> {
+    try {
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(
+            {
+              id: this.makeId(manager.payload),
+              ...(manager.variableURL ?? {}),
+            },
+            this.URLs.cancelProcessDataUrl
+          ),
+          method: this.methods.cancelProcessDataMethod,
+          params: manager.params,
+        },
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
+    } catch (error) {
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
   async handleBatchCancelProcessData(
-    payload: E[],
-    manager: BaseManagerParamsEntity<BaseResponseBatchDataEntity>
+    manager: BaseManagerParamsEntity
   ): Promise<void> {
-    const { params = {}, onSuccess, onFailed, token } = manager;
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(this.batchCancelProcessDataUrl),
-          method: 'PUT',
-          params: this.makeParams(params),
-          data: { ids: this.makeIds(payload) },
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(
+            manager.variableURL,
+            this.URLs.batchCancelProcessDataUrl
+          ),
+          method: this.methods.batchCancelProcessDataMethod,
+          params: manager.params,
+          data: { ids: this.makeIds(manager.payload) },
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<
-        BaseResponseBatchDataEntity
-      >;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
-  async handleActivate(
-    payload: E,
-    manager: BaseManagerParamsEntity<E>
-  ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
-    const id = this.makeId(payload);
-    try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(`${this.activateUrl}/${id}/activate`),
-          method: 'PATCH',
-          params: this.makeParams(params),
-        },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<E>;
-      onSuccess({ response: data ?? message ?? response });
-    } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
-    }
-  }
-
-  async handleDeactivate(
-    payload: E,
-    manager: BaseManagerParamsEntity<E>
-  ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
-    const id = this.makeId(payload);
-    try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(`${this.deactivateUrl}/${id}/deactivate`),
-          method: 'PATCH',
-          params: this.makeParams(params),
-        },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<E>;
-      onSuccess({ response: data ?? message ?? response });
-    } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
-    }
-  }
-
-  async handleBatchActivate(
-    payload: E[],
-    manager: BaseManagerParamsEntity<BaseResponseBatchDataEntity>
-  ): Promise<void> {
-    const { params = {}, onSuccess, onFailed, token } = manager;
-    try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(this.batchActivateUrl),
-          method: 'PUT',
-          params: this.makeParams(params),
-          data: { ids: this.makeIds(payload) },
-        },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<
-        BaseResponseBatchDataEntity
-      >;
-      onSuccess({ response: data ?? message ?? response });
-    } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
-    }
-  }
-
-  async handleBatchDeactivate(
-    payload: E[],
-    manager: BaseManagerParamsEntity<BaseResponseBatchDataEntity>
-  ): Promise<void> {
-    const { params = {}, onSuccess, onFailed, token } = manager;
-    try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(this.batchDeactivateUrl),
-          method: 'PUT',
-          params: this.makeParams(params),
-          data: { ids: this.makeIds(payload) },
-        },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<
-        BaseResponseBatchDataEntity
-      >;
-      onSuccess({ response: data ?? message ?? response });
-    } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
-    }
-  }
+  // confirm process transaction
 
   async handleConfirmProcessTransaction(
-    payload: E,
-    manager: BaseManagerParamsEntity<E>
+    manager: BaseManagerParamsEntity
   ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
-    const id = this.makeId(payload);
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
           url: this.makeApiUrl(
-            `${this.confirmProcessTransactionUrl}/${id}/confirm/process`
+            {
+              id: this.makeId(manager.payload),
+              ...(manager.variableURL ?? {}),
+            },
+            this.URLs.confirmProcessTransactionUrl
           ),
-          method: 'PUT',
-          params: this.makeParams(params),
+          method: this.methods.confirmProcessTransactionMethod,
+          params: manager.params,
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<E>;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
   async handleBatchConfirmProcessTransaction(
-    payload: E[],
-    manager: BaseManagerParamsEntity<BaseResponseBatchDataEntity>
+    manager: BaseManagerParamsEntity
   ): Promise<void> {
-    const { params = {}, onSuccess, onFailed, token } = manager;
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(this.batchConfirmProcessTransactionUrl),
-          method: 'PUT',
-          params: this.makeParams(params),
-          data: { ids: this.makeIds(payload) },
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(
+            manager.variableURL,
+            this.URLs.batchConfirmProcessTransactionUrl
+          ),
+          method: this.methods.batchConfirmProcessTransactionMethod,
+          params: manager.params,
+          data: { ids: this.makeIds(manager.payload) },
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<
-        BaseResponseBatchDataEntity
-      >;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
+  // cancel process transaction
+
   async handleCancelProcessTransaction(
-    payload: E,
-    manager: BaseManagerParamsEntity<E>
+    manager: BaseManagerParamsEntity
   ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
-    const id = this.makeId(payload);
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
           url: this.makeApiUrl(
-            `${this.cancelProcessTransactionUrl}/${id}/confirm/cancel`
+            {
+              id: this.makeId(manager.payload),
+              ...(manager.variableURL ?? {}),
+            },
+            this.URLs.cancelProcessTransactionUrl
           ),
-          method: 'PUT',
-          params: this.makeParams(params),
+          method: this.methods.cancelProcessTransactionMethod,
+          params: manager.params,
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<E>;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
   async handleBatchCancelProcessTransaction(
-    payload: E[],
-    manager: BaseManagerParamsEntity<BaseResponseBatchDataEntity>
+    manager: BaseManagerParamsEntity
   ): Promise<void> {
-    const { params = {}, onSuccess, onFailed, token } = manager;
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(this.batchCancelProcessTransactionUrl),
-          method: 'PUT',
-          params: this.makeParams(params),
-          data: { ids: this.makeIds(payload) },
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(
+            manager.variableURL,
+            this.URLs.batchCancelProcessTransactionUrl
+          ),
+          method: this.methods.batchCancelProcessTransactionMethod,
+          params: manager.params,
+          data: { ids: this.makeIds(manager.payload) },
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<
-        BaseResponseBatchDataEntity
-      >;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
+  //rollback transaction
   async handleRollbackProcessTransaction(
-    payload: E,
-    manager: BaseManagerParamsEntity<E>
+    manager: BaseManagerParamsEntity
   ): Promise<void> {
-    const { params, onSuccess, onFailed, token } = manager;
-    const id = this.makeId(payload);
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
           url: this.makeApiUrl(
-            `${this.rollbackProcessTransactionUrl}/${id}/confirm/rollback`
+            {
+              id: this.makeId(manager.payload),
+              ...(manager.variableURL ?? {}),
+            },
+            this.URLs.rollbackProcessTransactionUrl
           ),
-          method: 'PUT',
-          params: this.makeParams(params),
+          method: this.methods.rollbackProcessTransactionMethod,
+          params: manager.params,
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<E>;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 
   async handleBatchRollbackProcessTransaction(
-    payload: E[],
-    manager: BaseManagerParamsEntity<BaseResponseBatchDataEntity>
+    manager: BaseManagerParamsEntity
   ): Promise<void> {
-    const { params = {}, onSuccess, onFailed, token } = manager;
     try {
-      const response: any = await this.requestHttpClient.request(
-        {
-          url: this.makeApiUrl(this.batchRollbackProcessTransactionUrl),
-          method: 'PUT',
-          params: this.makeParams(params),
-          data: { ids: this.makeIds(payload) },
+      const response: any = await this.requestHttpClient.request({
+        token: manager.token,
+        authURL: this.authURL,
+        useAuthSchema: this.useAuthSchema,
+        params: {
+          baseURL: this.baseUrl,
+          url: this.makeApiUrl(
+            manager.variableURL,
+            this.URLs.batchRollbackProcessTransactionUrl
+          ),
+          method: this.methods.batchRollbackProcessTransactionMethod,
+          params: manager.params,
+          data: { ids: this.makeIds(manager.payload) },
         },
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<
-        BaseResponseBatchDataEntity
-      >;
-      onSuccess({ response: data ?? message ?? response });
+      });
+      if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
-    }
-  }
-
-  async handleCustomRequest(
-    manager: BaseManagerParamsEntity<BaseResponseIndexEntity<E>>
-  ): Promise<void> {
-    const { onSuccess, onFailed, token, paramRequest } = manager;
-    try {
-      const response: any = await this.requestHttpClient.request(
-        paramRequest,
-        token
-      );
-      const { message, data } = response as BaseResponseEntity<
-        BaseResponseIndexEntity<E>
-      >;
-      onSuccess({ response: data ?? message ?? response });
-    } catch (error) {
-      const { message, statusCode } = this.handleError(error) as ErrorRequest;
-      onFailed({ message, statusCode });
+      if (manager.onFailed) manager.onFailed(error as BaseResponseEntity);
     }
   }
 }

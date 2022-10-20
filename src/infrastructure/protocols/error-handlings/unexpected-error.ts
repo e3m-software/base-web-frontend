@@ -17,8 +17,8 @@ export class HttpError extends Error {
 export class ErrorRequest<T = any> extends Error {
   constructor(
     public data: T = null as any,
-    public message = 'Unexpected Error',
-    public statusCode = 500
+    public message = 'Internal server error.',
+    public status = 500
   ) {
     super(message);
   }
