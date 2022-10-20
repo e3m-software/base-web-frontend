@@ -1,6 +1,7 @@
 export * from './data/data-sources';
 export * from './data/orchestrators';
 
+export * from './domain/constant';
 export * from './domain/entities';
 export * from './domain/factories';
 export * from './domain/repositories';
