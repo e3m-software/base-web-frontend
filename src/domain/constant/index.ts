@@ -9,17 +9,17 @@ export const defaultMethod: BaseMethodEntity = {
   deleteMethod: 'DELETE',
   batchDeleteMethod: 'DELETE',
 
-  confirmProcessDataMethod: 'PATCH',
-  batchConfirmProcessDataMethod: 'PUT',
-
-  cancelProcessDataMethod: 'PATCH',
-  batchCancelProcessDataMethod: 'PUT',
-
   activateMethod: 'PATCH',
   batchActivateMethod: 'PUT',
 
   deactivateMethod: 'PATCH',
   batchDeactivateMethod: 'PUT',
+
+  confirmProcessDataMethod: 'PATCH',
+  batchConfirmProcessDataMethod: 'PUT',
+
+  cancelProcessDataMethod: 'PATCH',
+  batchCancelProcessDataMethod: 'PUT',
 
   confirmProcessTransactionMethod: 'PATCH',
   batchConfirmProcessTransactionMethod: 'PUT',
