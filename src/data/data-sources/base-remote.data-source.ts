@@ -32,7 +32,11 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
 
   constructor(params: BaseDataSourceConstructorEntity) {
     this.baseUrl = params.baseUrl ?? process.env.REACT_APP_BASE_URL;
-    this.URLs = params.urls ?? makeDefaultURL(params.apiUrl ?? '');
+    // this.URLs = params.urls ?? makeDefaultURL(params.apiUrl ?? '');
+    this.URLs = {
+      ...(makeDefaultURL(params.apiUrl ?? '') ?? {}),
+      ...(params.urls ?? {}),
+    };
     this.methods = params.methods ?? defaultMethod;
     this.useAuthSchema = params.useAuthSchema;
     this.authURL = params.authURL;
