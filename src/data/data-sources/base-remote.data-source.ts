@@ -37,7 +37,11 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
       ...(makeDefaultURL(params.apiUrl ?? '') ?? {}),
       ...(params.urls ?? {}),
     };
-    this.methods = params.methods ?? defaultMethod;
+    // this.methods = params.methods ?? defaultMethod;
+    this.methods = {
+      ...(defaultMethod ?? {}),
+      ...(params.methods ?? {}),
+    };
     this.useAuthSchema = params.useAuthSchema;
     this.authURL = params.authURL;
   }
