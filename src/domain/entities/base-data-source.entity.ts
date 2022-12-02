@@ -1,4 +1,4 @@
-import { AxiosRequestConfig, Method } from 'axios';
+import { AxiosRequestConfig, AxiosResponse, Method } from 'axios';
 import { BaseParamsEntity } from './base-params.entity';
 import { BaseEntity } from './base.entity';
 
@@ -24,6 +24,9 @@ export interface BaseManagerParamsEntity<Entity extends BaseEntity = any> {
   paramRequest?: AxiosRequestConfig;
   onFailed?(params: ResponseErrorEntity): void;
   onSuccess?(params: ResponseSuccessEntity): void;
+  interceptorRequest?(params: AxiosRequestConfig): any;
+  interceptorResponse?(params: AxiosResponse): any;
+  unauthorizedSchema?(params: AxiosResponse): void;
 }
 
 export type BaseResponseEntity = ResponseSuccessEntity | ResponseErrorEntity;
@@ -97,4 +100,7 @@ export interface BaseDataSourceConstructorEntity {
   apiUrl?: string;
   authURL?: string;
   useAuthSchema?: boolean;
+  interceptorRequest?(params: AxiosRequestConfig): any;
+  interceptorResponse?(params: AxiosResponse): any;
+  unauthorizedSchema?(params: AxiosResponse): void;
 }
