@@ -22,11 +22,8 @@ export interface BaseManagerParamsEntity<Entity extends BaseEntity = any> {
   params?: BaseParamsEntity;
   variableURL?: VariableURLEntity;
   paramRequest?: AxiosRequestConfig;
-  onFailed?(params: ResponseErrorEntity): void;
-  onSuccess?(params: ResponseSuccessEntity): void;
-  interceptorRequest?(params: AxiosRequestConfig): any;
-  interceptorResponse?(params: AxiosResponse): any;
-  unauthorizedSchema?(params: AxiosResponse): void;
+  onFailed?(error: ResponseErrorEntity): void;
+  onSuccess?(response: ResponseSuccessEntity): void;
 }
 
 export type BaseResponseEntity = ResponseSuccessEntity | ResponseErrorEntity;
@@ -98,9 +95,4 @@ export interface BaseDataSourceConstructorEntity {
   methods?: BaseMethodEntity;
   baseUrl?: string;
   apiUrl?: string;
-  authURL?: string;
-  useAuthSchema?: boolean;
-  interceptorRequest?(params: AxiosRequestConfig): any;
-  interceptorResponse?(params: AxiosResponse): any;
-  unauthorizedSchema?(params: AxiosResponse): void;
 }

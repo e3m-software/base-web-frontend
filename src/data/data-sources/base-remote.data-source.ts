@@ -12,7 +12,6 @@ import {
   BaseMethodEntity,
 } from '../..//domain/entities';
 import { defaultMethod, makeDefaultURL } from '../../domain/constant';
-import { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 const HeaderPost = {
   'Access-Control-Allow-Origin': '*',
@@ -26,9 +25,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   protected methods: BaseMethodEntity;
   protected useAuthSchema: boolean;
   protected authURL: string;
-  protected interceptorRequest?(params: AxiosRequestConfig): any;
-  protected interceptorResponse?(params: AxiosResponse): any;
-  protected unauthorizedSchema?(params: AxiosResponse): void;
 
   protected requestHttpClient: HttpClientRepository<
     BaseResponseEntity
@@ -44,12 +40,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
       ...(defaultMethod ?? {}),
       ...(params.methods ?? {}),
     };
-    this.useAuthSchema = params.useAuthSchema;
-    this.authURL = params.authURL;
-
-    this.interceptorRequest = params.interceptorRequest;
-    this.interceptorResponse = params.interceptorResponse;
-    this.unauthorizedSchema = params.unauthorizedSchema;
   }
 
   protected makeApiUrl(variable = {} as any, url = '' as string): string {
@@ -79,13 +69,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
     try {
       const response: any = await this.requestHttpClient.request({
         params: manager.paramRequest,
-        token: manager.token,
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
@@ -96,15 +79,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleGetIndex(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(manager.variableURL, this.URLs.getIndexUrl),
@@ -121,15 +95,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleGetData(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(manager.variableURL, this.URLs.getDataUrl),
@@ -147,15 +112,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleCreate(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(manager.variableURL, this.URLs.createUrl),
@@ -175,15 +131,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleUpdate(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(manager.variableURL, this.URLs.updateUrl),
@@ -202,15 +149,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleDelete(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -233,15 +171,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleBatchDelete(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(manager.variableURL, this.URLs.batchDeleteUrl),
@@ -262,15 +191,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   ): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -295,15 +215,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   ): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -325,15 +236,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleActivate(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -356,15 +258,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleBatchActivate(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(manager.variableURL, this.URLs.batchActivateUrl),
@@ -383,15 +276,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleDeactivate(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -414,15 +298,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleBatchDeactivate(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -446,15 +321,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   ): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -479,15 +345,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   ): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -512,15 +369,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   ): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -545,15 +393,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   ): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -578,15 +417,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   ): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -611,15 +441,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   ): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -643,15 +464,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   ): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
@@ -676,15 +488,6 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   ): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        interceptorRequest:
-          manager?.interceptorRequest ?? this.interceptorRequest,
-        interceptorResponse:
-          manager?.interceptorResponse ?? this.interceptorResponse,
-        unauthorizedSchema:
-          manager?.unauthorizedSchema ?? this.unauthorizedSchema,
-        token: manager.token,
-        authURL: this.authURL,
-        useAuthSchema: this.useAuthSchema,
         params: {
           baseURL: this.baseUrl,
           url: this.makeApiUrl(
