@@ -1,4 +1,4 @@
-import { AxiosRequestConfig, AxiosResponse, Method } from 'axios';
+import { AxiosRequestConfig, Method } from 'axios';
 import { BaseParamsEntity } from './base-params.entity';
 import { BaseEntity } from './base.entity';
 

@@ -1,7 +1,6 @@
-import { authHelper } from '../../helpers';
 import { ErrorRequest } from '../error-handlings';
 import { HttpRequestProps, HttpClientRepository } from '../repositories';
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 
 export class HttpClient<R> implements HttpClientRepository<R> {
   async request(props: HttpRequestProps): Promise<R> {
