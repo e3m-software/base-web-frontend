@@ -5,7 +5,6 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 export class HttpClient<R> implements HttpClientRepository<R> {
   async request(props: HttpRequestProps): Promise<R> {
     const { params } = props;
-
     try {
       const response: AxiosResponse = await axios.request<R>({ ...params });
       const data = response.data;

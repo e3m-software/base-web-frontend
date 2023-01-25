@@ -2,15 +2,15 @@ import {
   HttpClient,
   HttpClientRepository,
 } from '../../infrastructure/protocols';
-import { IBaseDataSourceRepository } from '../../domain/repositories';
+import { IBaseDataServicesRepository } from '../../domain/repositories';
 import {
   BaseEntity,
   BaseManagerParamsEntity,
-  BaseDataSourceConstructorEntity,
+  BaseDataServicesConstructorEntity,
   BaseResponseEntity,
   BaseURLEntity,
   BaseMethodEntity,
-} from '../..//domain/entities';
+} from '../../domain/entities';
 import { defaultMethod, makeDefaultURL } from '../../domain/constant';
 
 const HeaderPost = {
@@ -18,8 +18,8 @@ const HeaderPost = {
   'Content-Type': 'application/json',
   Accept: '*/*',
 };
-export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
-  implements IBaseDataSourceRepository<E> {
+export abstract class BaseRemoteDataServices<E extends BaseEntity = BaseEntity>
+  implements IBaseDataServicesRepository<E> {
   protected baseUrl: string;
   protected URLs: BaseURLEntity;
   protected methods: BaseMethodEntity;
@@ -30,7 +30,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
     BaseResponseEntity
   > = new HttpClient<BaseResponseEntity>();
 
-  constructor(params: BaseDataSourceConstructorEntity) {
+  constructor(params: BaseDataServicesConstructorEntity) {
     this.baseUrl = params.baseUrl ?? process.env.REACT_APP_BASE_URL;
     this.URLs = {
       ...(makeDefaultURL(params.apiUrl ?? '') ?? {}),
@@ -68,7 +68,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
   async handleCustomRequest(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        params: manager.paramRequest,
+        params: manager.requestConfig ?? {},
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
@@ -76,7 +76,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
     }
   }
 
-  async handleGetIndex(manager: BaseManagerParamsEntity): Promise<void> {
+  async handleGetList(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response = await this.requestHttpClient.request({
         params: {
@@ -84,6 +84,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           url: this.makeApiUrl(manager.variableURL, this.URLs.getIndexUrl),
           method: this.methods.getIndexMethod,
           params: manager.params,
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -92,7 +93,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
     }
   }
 
-  async handleGetData(manager: BaseManagerParamsEntity): Promise<void> {
+  async handleGetOne(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
         params: {
@@ -100,6 +101,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           url: this.makeApiUrl(manager.variableURL, this.URLs.getDataUrl),
           params: manager.params,
           method: this.methods.getDataMethod,
+          ...(manager.requestConfig ?? {}),
         },
       });
 
@@ -119,6 +121,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           data: manager.payload,
           headers: HeaderPost,
           method: this.methods.createMethod,
+          ...(manager.requestConfig ?? {}),
         },
       });
 
@@ -138,6 +141,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           data: manager.payload,
           headers: HeaderPost,
           method: this.methods.updateMethod,
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -160,6 +164,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           ),
           params: manager.params,
           method: this.methods.deleteMethod,
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -177,6 +182,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           method: this.methods.batchDeleteMethod,
           params: manager.params,
           data: { ids: this.makeIds(manager.payload) },
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -202,6 +208,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           ),
           method: this.methods.confirmProcessDataMethod,
           params: manager.params,
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -224,6 +231,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           method: this.methods.batchConfirmProcessDataMethod,
           params: manager.params,
           data: { ids: this.makeIds(manager.payload) },
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -247,6 +255,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           ),
           method: this.methods.activateMethod,
           params: manager.params,
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -264,6 +273,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           method: this.methods.batchActivateMethod,
           params: manager.params,
           data: { ids: this.makeIds(manager.payload) },
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -287,6 +297,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           ),
           method: this.methods.deactivateMethod,
           params: manager.params,
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -307,6 +318,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           method: this.methods.batchDeactivateMethod,
           params: manager.params,
           data: { ids: this.makeIds(manager.payload) },
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -332,6 +344,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           ),
           method: this.methods.cancelProcessDataMethod,
           params: manager.params,
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -354,6 +367,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           method: this.methods.batchCancelProcessDataMethod,
           params: manager.params,
           data: { ids: this.makeIds(manager.payload) },
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -380,6 +394,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           ),
           method: this.methods.confirmProcessTransactionMethod,
           params: manager.params,
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -402,6 +417,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           method: this.methods.batchConfirmProcessTransactionMethod,
           params: manager.params,
           data: { ids: this.makeIds(manager.payload) },
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -428,6 +444,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           ),
           method: this.methods.cancelProcessTransactionMethod,
           params: manager.params,
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -450,6 +467,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           method: this.methods.batchCancelProcessTransactionMethod,
           params: manager.params,
           data: { ids: this.makeIds(manager.payload) },
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -475,6 +493,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           ),
           method: this.methods.rollbackProcessTransactionMethod,
           params: manager.params,
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
@@ -497,6 +516,7 @@ export abstract class BaseRemoteDataSource<E extends BaseEntity = BaseEntity>
           method: this.methods.batchRollbackProcessTransactionMethod,
           params: manager.params,
           data: { ids: this.makeIds(manager.payload) },
+          ...(manager.requestConfig ?? {}),
         },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);

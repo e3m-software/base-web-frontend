@@ -1,11 +1,11 @@
 import { BaseManagerParamsEntity } from '../entities';
 
-export interface IBaseDataSourceRepository<E> {
+export interface IBaseDataServicesRepository<E> {
   handleCustomRequest(manager: BaseManagerParamsEntity): Promise<void>;
 
   //get data
-  handleGetData(manager: BaseManagerParamsEntity): Promise<void>;
-  handleGetIndex(manager: BaseManagerParamsEntity): Promise<void>;
+  handleGetOne(manager: BaseManagerParamsEntity): Promise<void>;
+  handleGetList(manager: BaseManagerParamsEntity): Promise<void>;
 
   //create and update
   handleCreate(manager: BaseManagerParamsEntity<E>): Promise<void>;

@@ -1,4 +1,4 @@
-export * from './data/data-sources';
+export * from './data/data-services';
 export * from './data/orchestrators';
 
 export * from './domain/constant';

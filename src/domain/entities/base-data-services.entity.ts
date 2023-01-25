@@ -21,7 +21,7 @@ export interface BaseManagerParamsEntity<Entity extends BaseEntity = any> {
   payload?: Entity;
   params?: BaseParamsEntity;
   variableURL?: VariableURLEntity;
-  paramRequest?: AxiosRequestConfig;
+  requestConfig?: AxiosRequestConfig;
   onFailed?(error: ResponseErrorEntity): void;
   onSuccess?(response: ResponseSuccessEntity): void;
 }
@@ -90,7 +90,7 @@ export interface BaseMethodEntity {
   batchRollbackProcessTransactionMethod?: Method;
 }
 
-export interface BaseDataSourceConstructorEntity {
+export interface BaseDataServicesConstructorEntity {
   urls?: BaseURLEntity;
   methods?: BaseMethodEntity;
   baseUrl?: string;
