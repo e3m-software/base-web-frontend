@@ -19,16 +19,16 @@ const HeaderPost = {
   Accept: '*/*',
 };
 export abstract class BaseRemoteDataServices<E extends BaseEntity = BaseEntity>
-  implements IBaseDataServicesRepository<E>
-{
+  implements IBaseDataServicesRepository<E> {
   protected baseUrl: string;
   protected URLs: BaseURLEntity;
   protected methods: BaseMethodEntity;
   protected useAuthSchema: boolean;
   protected authURL: string;
 
-  protected requestHttpClient: HttpClientRepository<BaseResponseEntity> =
-    new HttpClient<BaseResponseEntity>();
+  protected requestHttpClient: HttpClientRepository<
+    BaseResponseEntity
+  > = new HttpClient<BaseResponseEntity>();
 
   constructor(params: BaseDataServicesConstructorEntity) {
     this.baseUrl = params.baseUrl ?? process.env.REACT_APP_BASE_URL;
