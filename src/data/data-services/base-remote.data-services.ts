@@ -19,16 +19,16 @@ const HeaderPost = {
   Accept: '*/*',
 };
 export abstract class BaseRemoteDataServices<E extends BaseEntity = BaseEntity>
-  implements IBaseDataServicesRepository<E> {
+  implements IBaseDataServicesRepository<E>
+{
   protected baseUrl: string;
   protected URLs: BaseURLEntity;
   protected methods: BaseMethodEntity;
   protected useAuthSchema: boolean;
   protected authURL: string;
 
-  protected requestHttpClient: HttpClientRepository<
-    BaseResponseEntity
-  > = new HttpClient<BaseResponseEntity>();
+  protected requestHttpClient: HttpClientRepository<BaseResponseEntity> =
+    new HttpClient<BaseResponseEntity>();
 
   constructor(params: BaseDataServicesConstructorEntity) {
     this.baseUrl = params.baseUrl ?? process.env.REACT_APP_BASE_URL;
@@ -68,7 +68,10 @@ export abstract class BaseRemoteDataServices<E extends BaseEntity = BaseEntity>
   async handleCustomRequest(manager: BaseManagerParamsEntity): Promise<void> {
     try {
       const response: any = await this.requestHttpClient.request({
-        params: manager.requestConfig ?? {},
+        params: {
+          baseURL: this.baseUrl,
+          ...(manager.requestConfig ?? {}),
+        },
       });
       if (manager.onSuccess) manager.onSuccess(response as BaseResponseEntity);
     } catch (error) {
