@@ -1,4 +1,4 @@
-## BASE WEB FRONTEND
+## BASE WEB FRONTEND [UPDATE]
 
 To install, use:
 
